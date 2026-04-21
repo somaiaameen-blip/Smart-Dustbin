@@ -1,0 +1,84 @@
+#include <Servo.h>
+
+// --- تعريف الأطراف ---
+const int trigDoor = 2;   
+const int echoDoor = 3;
+const int trigLevel = 4;  
+const int echoLevel = 5;
+const int ledFull = 13;   
+const int servoPin = 9;   
+
+Servo myServo;
+
+// --- إعدادات المسافات والزوايا ---
+const int distToOpen = 25;    
+const int distIsFull = 7;     
+const int closedAngle = 0;    
+const int openedAngle = 100;  
+
+void setup() {
+  Serial.begin(9600);
+  
+  pinMode(trigDoor, OUTPUT);
+  pinMode(echoDoor, INPUT);
+  pinMode(trigLevel, OUTPUT);
+  pinMode(echoLevel, INPUT);
+  pinMode(ledFull, OUTPUT);
+  
+  myServo.attach(servoPin);
+  myServo.write(closedAngle); 
+  
+  Serial.println("System Ready - Waiting for objects...");
+}
+
+void loop() {
+  int personDistance = getDistance(trigDoor, echoDoor);
+  int wasteLevel = getDistance(trigLevel, echoLevel);
+
+  // منطق فتح الباب
+  if (personDistance > 0 && personDistance < distToOpen) {
+    Serial.println("Opening...");
+    openDoor();       
+    
+    delay(1000);      // تم تقليل زمن الانتظار لثانية واحدة فقط
+    
+    closeDoor();      
+    Serial.println("Closing...");
+  }
+
+  // منطق إنذار الامتلاء
+  if (wasteLevel > 0 && wasteLevel < distIsFull) {
+    digitalWrite(ledFull, HIGH);
+    Serial.println("⚠️ FULL!");
+  } else {
+    digitalWrite(ledFull, LOW);
+  }
+
+  delay(100); 
+}
+
+int getDistance(int trig, int echo) {
+  digitalWrite(trig, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trig, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trig, LOW);
+  long duration = pulseIn(echo, HIGH);
+  int distance = duration * 0.034 / 2;
+  return (distance == 0) ? 999 : distance;
+}
+
+// زيادة سرعة الحركة قليلاً بجعل الـ delay 5ms بدل 15ms
+void openDoor() {
+  for (int pos = closedAngle; pos <= openedAngle; pos += 3) { // زيادة الخطوة لـ 3 لسرعة أكبر
+    myServo.write(pos);
+    delay(5); 
+  }
+}
+
+void closeDoor() {
+  for (int pos = openedAngle; pos >= closedAngle; pos -= 3) {
+    myServo.write(pos);
+    delay(5);
+  }
+}
