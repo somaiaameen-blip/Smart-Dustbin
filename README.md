@@ -1,2 +1,1 @@
-# Smart-Dustbin
-Smart Dustbin
+
